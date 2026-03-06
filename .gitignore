@@ -1,0 +1,28 @@
+# Nuitka
+main.build/
+main.dist/
+
+# FFmpeg binary
+ffmpeg_bin/
+
+# Скачанные файлы
+audios/
+videos/
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+
+# PyInstaller / Nuitka билды
+dist/
+build/
+*.spec
+
+# IDE
+.idea/
+.vscode/
+
+# OS
+.DS_Store
+Thumbs.db
