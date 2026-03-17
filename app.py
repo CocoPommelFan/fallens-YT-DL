@@ -208,8 +208,8 @@ class MainWindow(QMainWindow):
     def set_false_default_button(self):
         self.video_download_button.setEnabled(False)
         self.audio_download_button.setEnabled(False)
-        self.label_download_status.setText("Download Status: ")
-        self.label_postprocessor_status.setText("Download Status: ")
+        self.label_download_status.setText("Download status: ")
+        self.label_postprocessor_status.setText("Post processor status: ")
         self.timecode_checkbox.setEnabled(False)
 
     def event_connector(self):

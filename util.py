@@ -14,6 +14,7 @@ class DownloadAudio:
 
 
         ydl_opt = {
+            'js_runtimes': {'deno': {'path': ".\\deno_bin\\deno.exe"}},
             'format': 'bestaudio/best',
             'outtmpl': './audios/%(title)s.%(ext)s',
             'ffmpeg_location': "./ffmpeg_bin/",
@@ -40,6 +41,7 @@ class DownloadVideo:
     def download_video(self, url: str, timecode: Tuple[str, str], checkboxState: bool, ext: str, yd):
         makedirs("./videos", exist_ok=True)
         ydl_opt = {
+            'js_runtimes': {'deno': {'path': ".\\deno_bin\\deno.exe"}},
             'format': 'bestvideo[height<=1080]+bestaudio/best[height<=1080]/best',
             'outtmpl': './videos/%(title)s.%(ext)s',
             'ffmpeg_location': './ffmpeg_bin/',
@@ -95,6 +97,7 @@ class YoutubeDownloader(QThread):
             print(f"Ошибка в run(): {e}")  # ← и это
             self.error_signal.emit(str(e))
         print("run() завершён")  # ← и финальная метка
+        self.is_downloading_signal.emit()
 
     def progress_hook(self, d):
         percent = d.get('_percent')
