@@ -1,8 +1,8 @@
 import sys
 
-from PyQt6.QtCore import QSize
-from PyQt6.QtWidgets import QApplication, QWidget, QMainWindow, QLineEdit, QVBoxLayout, QHBoxLayout, \
-    QGroupBox, QRadioButton, QPushButton, QLabel, QProgressBar
+from PySide6.QtCore import QSize
+from PySide6.QtWidgets import QApplication, QWidget, QMainWindow, QLineEdit, QVBoxLayout, QHBoxLayout, \
+    QGroupBox, QRadioButton, QPushButton, QLabel, QProgressBar, QTimeEdit, QCheckBox
 
 import util
 
@@ -11,6 +11,8 @@ class MainWindow(QMainWindow):
 
     def __init__(self):
         super(MainWindow, self).__init__()
+
+        self.dt = util.YoutubeDownloader()
 
         self.setWindowTitle("Youtube Downloader")
 
@@ -22,6 +24,24 @@ class MainWindow(QMainWindow):
         self.url_line.setPlaceholderText("Youtube URL")
         self.vlayout_main.addWidget(self.url_line)
 
+        # Timecode checkbox
+        self.timecode_checkbox = QCheckBox("Cut by timecode")
+        self.vlayout_main.addWidget(self.timecode_checkbox)
+
+        # Horizontal timecodes
+        self.hlayout_timecode = QHBoxLayout()
+        self.from_time_edit = QTimeEdit()
+        self.to_time_edit = QTimeEdit()
+        self.from_time_edit.setEnabled(False)
+        self.to_time_edit.setEnabled(False)
+
+        self.from_time_edit.setDisplayFormat("HH:mm:ss")
+        self.to_time_edit.setDisplayFormat("HH:mm:ss")
+
+        self.hlayout_timecode.addWidget(self.from_time_edit)
+        self.hlayout_timecode.addWidget(self.to_time_edit)
+
+        self.vlayout_main.addLayout(self.hlayout_timecode)
         # Horizontal options
         self.hlayout_options = QHBoxLayout()
 
@@ -100,18 +120,7 @@ class MainWindow(QMainWindow):
         self.vlayout_main.addWidget(self.progress_bar)
 
         # Event connect
-        self.audio_download_button.clicked.connect(self.audio_download_clicked)
-        self.video_download_button.clicked.connect(self.video_download_clicked)
-        self.dt = util.YoutubeDownloader()
-        self.dt.progress_str_signal.connect(self.setlabelpercent)
-        self.dt.total_signal.connect(self.setlabeltotal)
-        self.dt.speed_signal.connect(self.setspeed)
-        self.dt.progress_signal.connect(self.progress_bar.setValue)
-        self.dt.progress_status_signal.connect(self.label_download_status.setText)
-        self.dt.postprocessor_status_signal.connect(self.label_postprocessor_status.setText)
-        self.dt.left_download_button_signal.connect(self.audio_download_button.setEnabled)
-        self.dt.right_download_button_signal.connect(self.video_download_button.setEnabled)
-        self.dt.error_signal.connect(self.error_handler)
+        self.event_connector()
 
         main_container.setLayout(self.vlayout_main)
 
@@ -142,7 +151,19 @@ class MainWindow(QMainWindow):
             ext = "opus"
         self.set_false_default_button()
 
-        util.DownloadAudio().download_audio(self.url_line.text(), ext, self.dt)
+        self.dt = util.YoutubeDownloader()
+        self.event_connector()
+
+        timecode = (
+            self.from_time_edit.time().toString("HH:mm:ss"),
+            self.to_time_edit.time().toString("HH:mm:ss")
+        )
+
+        util.DownloadAudio().download_audio(self.url_line.text(),
+                                            timecode,
+                                            self.timecode_checkbox.isChecked(),
+                                            ext,
+                                            self.dt)
 
 
     def video_download_clicked(self, *args):
@@ -156,7 +177,19 @@ class MainWindow(QMainWindow):
 
         self.set_false_default_button()
 
-        util.DownloadVideo().download_video(self.url_line.text(), ext, self.dt)
+        self.dt = util.YoutubeDownloader()
+        self.event_connector()
+
+        timecode = (
+            self.from_time_edit.time().toString("HH:mm:ss"),
+            self.to_time_edit.time().toString("HH:mm:ss")
+        )
+
+        util.DownloadVideo().download_video(self.url_line.text(),
+                                            timecode,
+                                            self.timecode_checkbox.isChecked(),
+                                            ext,
+                                            self.dt)
 
     def error_handler(self, e):
         self.progress_bar.setValue(0)
@@ -170,14 +203,38 @@ class MainWindow(QMainWindow):
     def set_true_default_button(self):
         self.video_download_button.setEnabled(True)
         self.audio_download_button.setEnabled(True)
-        pass
+        self.timecode_checkbox.setEnabled(True)
 
     def set_false_default_button(self):
         self.video_download_button.setEnabled(False)
         self.audio_download_button.setEnabled(False)
         self.label_download_status.setText("Download Status: ")
         self.label_postprocessor_status.setText("Download Status: ")
+        self.timecode_checkbox.setEnabled(False)
 
+    def event_connector(self):
+        self.audio_download_button.clicked.connect(self.audio_download_clicked)
+        self.video_download_button.clicked.connect(self.video_download_clicked)
+        self.timecode_checkbox.toggled.connect(self.timecode_checkbox_on_toggle)
+
+        self.dt.is_downloading_signal.connect(self.set_true_default_button)
+        self.dt.progress_str_signal.connect(self.setlabelpercent)
+        self.dt.total_signal.connect(self.setlabeltotal)
+        self.dt.speed_signal.connect(self.setspeed)
+        self.dt.progress_signal.connect(self.progress_bar.setValue)
+        self.dt.progress_status_signal.connect(self.label_download_status.setText)
+        self.dt.postprocessor_status_signal.connect(self.label_postprocessor_status.setText)
+        self.dt.left_download_button_signal.connect(self.audio_download_button.setEnabled)
+        self.dt.right_download_button_signal.connect(self.video_download_button.setEnabled)
+        self.dt.error_signal.connect(self.error_handler)
+
+    def timecode_checkbox_on_toggle(self, state: bool) -> None:
+        if state:
+            self.from_time_edit.setEnabled(True)
+            self.to_time_edit.setEnabled(True)
+        else:
+            self.from_time_edit.setEnabled(False)
+            self.to_time_edit.setEnabled(False)
 class YoutubeDownloaderApp:
     def __init__(self):
         self.app = QApplication(sys.argv)

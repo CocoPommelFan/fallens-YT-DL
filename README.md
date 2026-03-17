@@ -5,4 +5,4 @@
 
 
 1. Download and extract [ffmpeg.exe](https://www.gyan.dev/ffmpegs/) to YT-DL/ffmpeg_bin/ffmpeg.exe
-2. Run я гандон
+2. Run н
